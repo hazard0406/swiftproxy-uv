@@ -1,0 +1,18 @@
+{
+  "name": "swiftproxy-uv",
+  "version": "1.0.0",
+  "description": "SwiftProxy UV/Scramjet backend",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@titaniumnetwork-dev/ultraviolet": "^3.2.6",
+    "@mercuryworkshop/scramjet": "^0.1.5",
+    "@mercuryworkshop/epoxy-transport": "^2.0.9",
+    "@mercuryworkshop/bare-mux": "^2.0.5",
+    "bare-server-node": "^1.1.0",
+    "express": "^4.18.2"
+  }
+}
