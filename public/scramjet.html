@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>SwiftProxy — Scramjet</title>
+<script src="/baremux/index.js"></script>
+<script src="/scramjet/scramjet.codecs.js"></script>
+</head>
+<body>
+<script>
+(async () => {
+  // Set up bare mux with epoxy transport
+  const { BareMuxConnection } = await import("/baremux/index.js");
+  const conn = new BareMuxConnection("/baremux/worker.js");
+  await conn.setTransport("/epoxy/index.js", [{ wisp: `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/bare/` }]);
+
+  // Register Scramjet service worker
+  if ("serviceWorker" in navigator) {
+    await navigator.serviceWorker.register("/scramjet/scramjet.sw.js", {
+      scope: "/scramjet-service/",
+    });
+  }
+
+  // Get target URL from query param
+  const params = new URLSearchParams(location.search);
+  const target = params.get("url");
+
+  if (target) {
+    const encoded = ScramjetCodec.encode(target);
+    location.replace("/scramjet-service/" + encoded);
+  } else {
+    location.replace("/");
+  }
+})();
+</script>
+</body>
+</html>
