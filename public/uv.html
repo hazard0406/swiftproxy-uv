@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>SwiftProxy — Ultraviolet</title>
+<script src="/uv/uv.bundle.js"></script>
+<script src="/uv/uv.config.js"></script>
+<script src="/uv.config.js"></script>
+<script src="/baremux/index.js"></script>
+</head>
+<body>
+<script>
+(async () => {
+  // Register UV service worker
+  if ("serviceWorker" in navigator) {
+    await navigator.serviceWorker.register("/uv/uv.sw.js", {
+      scope: __uv$config.prefix,
+    });
+  }
+
+  // Get the target URL from query param
+  const params = new URLSearchParams(location.search);
+  const target = params.get("url");
+
+  if (target) {
+    // Redirect to the proxied URL
+    location.replace(__uv$config.prefix + __uv$config.encodeUrl(target));
+  } else {
+    // No URL — redirect home
+    location.replace("/");
+  }
+})();
+</script>
+</body>
+</html>
