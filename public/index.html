@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SwiftProxy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#4f46e5;--primary-dark:#3730a3;--primary-light:#818cf8;
+  --bg:#f8fafc;--card:#fff;--text:#1e293b;--muted:#64748b;
+  --border:#e2e8f0;--danger:#ef4444;--success:#22c55e;
+}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+nav{background:var(--primary);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;box-shadow:0 2px 8px #0002;flex-shrink:0}
+.logo{color:#fff;font-size:1.3rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.logo span{background:#fff2;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:600}
+.nav-links{display:flex;align-items:center;gap:.25rem}
+.nav-links a,.nav-links button{color:#c7d2fe;text-decoration:none;font-size:.85rem;margin-left:.75rem;background:none;border:none;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{color:#fff}
+.nav-links .active-nav{color:#fff;border-bottom:2px solid #818cf8;padding-bottom:2px}
+
+/* ── PAGES ── */
+.page{display:none;flex-direction:column;flex:1}
+.page.active{display:flex}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:3.5rem 1rem 4rem;text-align:center;color:#fff}
+.hero h1{font-size:2.2rem;font-weight:800;margin-bottom:.4rem}
+.hero .credit{color:#a5b4fc;font-size:.82rem;letter-spacing:.06em;margin-bottom:1rem}
+.hero p{color:#c7d2fe;font-size:1rem;max-width:520px;margin:0 auto 2rem}
+
+/* ── SEARCH CARD ── */
+.search-wrap{background:#fff;border-radius:14px;padding:1.5rem;max-width:640px;margin:0 auto;box-shadow:0 8px 32px #0003}
+.worker-notice{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:.65rem 1rem;font-size:.8rem;color:#92400e;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.worker-notice input{flex:1;min-width:160px;border:1px solid #fcd34d;border-radius:6px;padding:3px 8px;font-size:.8rem;outline:none;background:#fffbeb}
+.worker-notice button{background:#d97706;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:.78rem;cursor:pointer}
+.url-row{display:flex;gap:.5rem}
+.url-input{flex:1;border:2px solid var(--border);border-radius:8px;padding:.65rem 1rem;font-size:1rem;outline:none;transition:border .2s}
+.url-input:focus{border-color:var(--primary)}
+.go-btn{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:.65rem 1.4rem;font-size:1rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap}
+.go-btn:hover{background:var(--primary-dark)}
+.go-btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* ── PROXY SELECTOR (UV/Scramjet page) ── */
+.proxy-selector{display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.proxy-opt{flex:1;min-width:140px;border:2px solid var(--border);border-radius:10px;padding:.85rem 1rem;cursor:pointer;transition:all .2s;text-align:center;background:#fff}
+.proxy-opt:hover{border-color:var(--primary-light)}
+.proxy-opt.selected{border-color:var(--primary);background:#eef2ff}
+.proxy-opt h4{font-size:.95rem;color:var(--text);margin-bottom:.2rem}
+.proxy-opt p{font-size:.73rem;color:var(--muted)}
+.proxy-opt .badge-tag{display:inline-block;background:#4f46e5;color:#fff;font-size:.65rem;border-radius:4px;padding:1px 6px;margin-top:.3rem}
+.proxy-opt.selected h4{color:var(--primary)}
+
+.codespace-notice{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.65rem 1rem;font-size:.8rem;color:#1e40af;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.codespace-notice input{flex:1;min-width:160px;border:1px solid #93c5fd;border-radius:6px;padding:3px 8px;font-size:.8rem;outline:none;background:#fff}
+.codespace-notice button{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:.78rem;cursor:pointer}
+
+/* ── LOADER ── */
+.loader-wrap{display:none;flex-direction:column;align-items:center;gap:1rem;padding:3rem}
+.loader-wrap.show{display:flex}
+.spinner{width:42px;height:42px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-msg{color:var(--muted);font-size:.95rem}
+
+/* ── ERROR ── */
+.error-box{display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:1.25rem;max-width:540px;margin:1.5rem auto;text-align:center}
+.error-box.show{display:block}
+.error-box h3{color:var(--danger);margin-bottom:.4rem}
+.error-box p{color:#7f1d1d;font-size:.875rem;margin-bottom:.75rem}
+.error-box button{background:var(--primary);color:#fff;border:none;border-radius:7px;padding:.4rem 1rem;cursor:pointer;font-size:.85rem}
+
+/* ── FRAME ── */
+#frame-section{display:none;flex-direction:column;flex:1}
+#frame-section.show{display:flex}
+.status-bar{background:#1e1b4b;padding:.45rem 1rem;display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:#c7d2fe;flex-wrap:wrap}
+.sbadge{border-radius:20px;padding:2px 10px;font-size:.72rem;background:#ffffff18}
+.sbadge.secure{color:#86efac}
+.sbadge.warn{color:#fca5a5}
+.status-url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:.75rem}
+.close-btn{background:var(--danger);color:#fff;border:none;border-radius:6px;padding:2px 10px;font-size:.78rem;cursor:pointer}
+.toolbar{background:#2d2b55;display:flex;align-items:center;gap:.4rem;padding:.4rem .75rem}
+.tb-btn{background:#ffffff15;color:#c7d2fe;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem}
+.tb-btn:hover{background:#ffffff28}
+.tb-url{flex:1;background:#ffffff10;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;color:#fff;font-size:.82rem;outline:none}
+.tb-url:focus{border-color:var(--primary-light)}
+#proxy-frame{flex:1;border:none;width:100%;min-height:70vh;background:#fff}
+
+/* ── FEATURES ── */
+.features{padding:3rem 1rem;max-width:900px;margin:0 auto;width:100%}
+.features h2{text-align:center;font-size:1.35rem;margin-bottom:1.75rem}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.1rem}
+.feat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem;display:flex;gap:.75rem;align-items:flex-start}
+.feat-icon{font-size:1.5rem;flex-shrink:0}
+.feat-card h4{font-size:.9rem;margin-bottom:.2rem}
+.feat-card p{font-size:.78rem;color:var(--muted)}
+
+/* ── DIVIDER ── */
+.section-divider{display:flex;align-items:center;gap:1rem;max-width:640px;margin:0 auto 1.5rem;padding:0 1rem}
+.section-divider hr{flex:1;border:none;border-top:1px solid var(--border)}
+.section-divider span{color:var(--muted);font-size:.8rem;white-space:nowrap}
+
+footer{background:#1e293b;color:#94a3b8;text-align:center;padding:1.1rem;font-size:.78rem;margin-top:auto}
+footer a{color:#818cf8;text-decoration:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🌐 SwiftProxy <span>BETA</span></div>
+  <div class="nav-links">
+    <button onclick="showPage('home')" id="nav-home" class="active-nav">Home</button>
+    <button onclick="showPage('advanced')" id="nav-advanced">Advanced Proxy</button>
+    <a href="#">About</a>
+  </div>
+</nav>
+
+<!-- ══════════════ HOME PAGE ══════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <h1>SwiftProxy</h1>
+    <p class="credit">created by hzr.d</p>
+    <p>Real server-side proxy powered by Cloudflare Workers. Paste a URL and browse anonymously.</p>
+    <div class="search-wrap">
+      <div class="worker-notice" id="worker-notice">
+        ⚙️ Worker URL:
+        <input id="worker-url" type="text" placeholder="https://your-worker.your-name.workers.dev"/>
+        <button onclick="saveWorker()">Save</button>
+      </div>
+      <div class="url-row">
+        <input id="url-input" class="url-input" type="text" placeholder="e.g. https://wikipedia.org" autocomplete="off" spellcheck="false"/>
+        <button class="go-btn" id="go-btn" onclick="startProxy()">Go</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="loader-wrap" id="loader">
+    <div class="spinner"></div>
+    <div class="loader-msg" id="loader-msg">Connecting…</div>
+  </div>
+  <div class="error-box" id="error-box">
+    <h3>⚠️ Could Not Load Page</h3>
+    <p id="error-msg">Something went wrong.</p>
+    <button onclick="document.getElementById('error-box').classList.remove('show')">Dismiss</button>
+  </div>
+
+  <div class="features">
+    <h2>Why SwiftProxy?</h2>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">🔒</div><div><h4>Real HTTPS Support</h4><p>Full SSL via Cloudflare — every request is encrypted end-to-end.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">⚡</div><div><h4>Server-Side Fetching</h4><p>No CORS issues — pages are fetched on the server, not your browser.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🔗</div><div><h4>Link Rewriting</h4><p>All links and assets are rewritten to route through the proxy automatically.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">👁️</div><div><h4>Anonymous Browsing</h4><p>Target sites see Cloudflare's IP, not yours.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🆓</div><div><h4>Free Tier Friendly</h4><p>Cloudflare Workers free tier supports 100k requests/day.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🧩</div><div><h4>Advanced Proxy</h4><p>Need more power? Try our <button onclick="showPage('advanced')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:.78rem;padding:0;text-decoration:underline">UV & Scramjet proxy</button>.</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADVANCED PROXY PAGE ══════════════ -->
+<div id="page-advanced" class="page">
+  <div class="hero">
+    <h1>Advanced Proxy</h1>
+    <p class="credit">created by hzr.d</p>
+    <p>Choose between Ultraviolet and Scramjet — both provide full JS support, clickable links, and real browsing.</p>
+    <div class="search-wrap">
+      <!-- Proxy picker -->
+      <div class="proxy-selector">
+        <div class="proxy-opt selected" id="opt-uv" onclick="selectProxy('uv')">
+          <h4>⚡ Ultraviolet</h4>
+          <p>Reliable, widely supported proxy engine. Great for most sites.</p>
+          <span class="badge-tag">Recommended</span>
+        </div>
+        <div class="proxy-opt" id="opt-scramjet" onclick="selectProxy('scramjet')">
+          <h4>🚀 Scramjet</h4>
+          <p>Next-gen proxy with deeper JS rewriting. Best for complex sites.</p>
+          <span class="badge-tag" style="background:#7c3aed">Advanced</span>
+        </div>
+      </div>
+
+      <div class="url-row">
+        <input id="adv-url-input" class="url-input" type="text" placeholder="e.g. https://youtube.com" autocomplete="off" spellcheck="false"/>
+        <button class="go-btn" id="adv-go-btn" onclick="startAdvProxy()">Go</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="adv-error-box">
+    <h3>⚠️ Error</h3>
+    <p id="adv-error-msg">Something went wrong.</p>
+    <button onclick="document.getElementById('adv-error-box').classList.remove('show')">Dismiss</button>
+  </div>
+
+  <div class="features">
+    <h2>UV vs Scramjet</h2>
+    <div class="feat-grid">
+      <div class="feat-card"><div class="feat-icon">⚡</div><div><h4>Ultraviolet</h4><p>Battle-tested proxy engine. Works on the vast majority of websites including YouTube and social media.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🚀</div><div><h4>Scramjet</h4><p>Advanced JS rewriting engine. Handles complex SPAs and sites that UV struggles with.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🖱️</div><div><h4>Fully Clickable</h4><p>Both engines rewrite JavaScript so all buttons, links, and forms work properly.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🔒</div><div><h4>Secure</h4><p>All traffic routes through your own Codespace server — no third parties involved.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🎮</div><div><h4>Games & Apps</h4><p>Both engines support flash emulation, games, and web apps through the proxy.</p></div></div>
+      <div class="feat-card"><div class="feat-icon">🧠</div><div><h4>Which to choose?</h4><p>Start with Ultraviolet. If a site doesn't work, try Scramjet — it handles harder cases.</p></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ FRAME (shared) ══════════════ -->
+<div id="frame-section">
+  <div class="status-bar">
+    <span id="status-badge" class="sbadge secure">🔒 Secure</span>
+    <span class="status-url" id="status-url"></span>
+    <span id="proxy-engine-badge" style="background:#4f46e520;color:#818cf8;border-radius:20px;padding:2px 10px;font-size:.7rem"></span>
+    <button class="close-btn" onclick="closeProxy()">✕ Home</button>
+  </div>
+  <div class="toolbar">
+    <button class="tb-btn" onclick="goBack()">◀</button>
+    <button class="tb-btn" onclick="goForward()">▶</button>
+    <button class="tb-btn" onclick="reloadFrame()">↺</button>
+    <input class="tb-url" id="tb-url" type="text" placeholder="Enter URL…" onkeydown="if(event.key==='Enter')navigateTb(this.value)"/>
+    <button class="tb-btn" onclick="navigateTb(document.getElementById('tb-url').value)">Go</button>
+    <button class="tb-btn" onclick="closeProxy()">🏠</button>
+  </div>
+  <iframe id="proxy-frame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-top-navigation"></iframe>
+</div>
+
+<footer id="main-footer">
+  &copy; 2026 SwiftProxy &nbsp;|&nbsp; <a href="#">Privacy Policy</a> &nbsp;|&nbsp; <a href="#">Terms</a> &nbsp;|&nbsp; For educational use only.
+</footer>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let workerBase = localStorage.getItem('sp_worker') || '';
+let codespaceBase = localStorage.getItem('sp_codespace') || '';
+let selectedProxy = 'uv';
+let currentUrl = '', currentMode = 'worker';
+let hist = [], hIdx = -1;
+
+// ── Init ───────────────────────────────────────────────
+(function init() {
+  if (workerBase) {
+    document.getElementById('worker-url').value = workerBase;
+    setNoticeGreen('worker-notice');
+  }
+  if (codespaceBase) {
+    document.getElementById('codespace-url').value = codespaceBase;
+    setNoticeGreen('codespace-notice', true);
+  }
+})();
+
+// ── Page Navigation ────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active-nav'));
+  document.getElementById('nav-' + name).classList.add('active-nav');
+  // hide frame if switching pages
+  document.getElementById('frame-section').style.display = 'none';
+  document.getElementById('main-footer').style.display = '';
+  document.getElementById('page-' + name).style.display = 'flex';
+}
+
+// ── Proxy Selection ────────────────────────────────────
+function selectProxy(type) {
+  selectedProxy = type;
+  document.getElementById('opt-uv').classList.toggle('selected', type === 'uv');
+  document.getElementById('opt-scramjet').classList.toggle('selected', type === 'scramjet');
+}
+
+// ── Save Settings ──────────────────────────────────────
+function saveWorker() {
+  let v = document.getElementById('worker-url').value.trim().replace(/\/+$/, '');
+  if (!v) return;
+  if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+  workerBase = v;
+  localStorage.setItem('sp_worker', v);
+  document.getElementById('worker-url').value = v;
+  setNoticeGreen('worker-notice');
+  alert('✅ Worker URL saved!');
+}
+
+
+
+function setNoticeGreen(id, blue) {
+  const n = document.getElementById(id);
+  if (blue) { n.style.background='#eff6ff'; n.style.borderColor='#bfdbfe'; }
+  else { n.style.background='#f0fdf4'; n.style.borderColor='#bbf7d0'; }
+}
+
+// ── Worker Proxy (Home page) ───────────────────────────
+async function startProxy() {
+  const url = norm(document.getElementById('url-input').value);
+  if (!url) { showErr('Please enter a valid URL.'); return; }
+  if (!workerBase) { showErr('Please set your Cloudflare Worker URL first.'); return; }
+  currentMode = 'worker';
+  await loadWorkerUrl(url);
+}
+
+async function loadWorkerUrl(url) {
+  document.getElementById('go-btn').disabled = true;
+  showLoader();
+  const msgs = ['Connecting to server…','Fetching page…','Rewriting links…','Almost there…'];
+  let mi = 0;
+  const t = setInterval(() => document.getElementById('loader-msg').textContent = msgs[mi++ % msgs.length], 800);
+  try {
+    const resp = await fetch(`${workerBase}?url=${encodeURIComponent(url)}`);
+    clearInterval(t);
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(`Worker returned ${resp.status}`);
+    renderFrame(text, url, 'CF Worker', false);
+  } catch(e) {
+    clearInterval(t);
+    showErr(`Error: ${e.message}`);
+  }
+  document.getElementById('go-btn').disabled = false;
+}
+
+// ── Advanced Proxy (UV / Scramjet) ─────────────────────
+function startAdvProxy() {
+  const url = norm(document.getElementById('adv-url-input').value);
+  if (!url) { showAdvErr('Please enter a valid URL.'); return; }
+
+  // Since this file is served from the same server, use relative routes
+  const routes = { uv: '/uv-proxy', scramjet: '/scramjet-proxy' };
+  const route = routes[selectedProxy] || '/uv-proxy';
+
+  currentMode = 'advanced';
+  // Pass the target URL as a query param so uv.html/scramjet.html can redirect
+  const proxyPageUrl = `${route}?url=${encodeURIComponent(url)}`;
+  renderFrame(null, url, selectedProxy === 'uv' ? '⚡ Ultraviolet' : '🚀 Scramjet', true, proxyPageUrl, url);
+}
+
+// ── Frame Rendering ────────────────────────────────────
+function renderFrame(html, url, engineLabel, useIframeSrc, iframeSrc, targetUrl) {
+  hideLoader();
+  currentUrl = url;
+  if (hIdx < hist.length - 1) hist = hist.slice(0, hIdx + 1);
+  hist.push(url); hIdx = hist.length - 1;
+
+  // hide all pages, show frame
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  document.getElementById('main-footer').style.display = 'none';
+  const fs = document.getElementById('frame-section');
+  fs.style.display = 'flex';
+
+  document.getElementById('status-url').textContent = url;
+  document.getElementById('tb-url').value = url;
+  document.getElementById('proxy-engine-badge').textContent = engineLabel;
+
+  const secure = url.startsWith('https://');
+  const b = document.getElementById('status-badge');
+  b.textContent = secure ? '🔒 Secure' : '⚠️ Insecure';
+  b.className = 'sbadge ' + (secure ? 'secure' : 'warn');
+
+  const frame = document.getElementById('proxy-frame');
+  if (useIframeSrc) {
+    frame.removeAttribute('srcdoc');
+    frame.src = iframeSrc;
+  } else {
+    frame.removeAttribute('src');
+    frame.srcdoc = html;
+  }
+}
+
+function closeProxy() {
+  document.getElementById('frame-section').style.display = 'none';
+  document.getElementById('main-footer').style.display = '';
+  document.querySelectorAll('.page').forEach(p => p.style.display = '');
+  showPage(currentMode === 'advanced' ? 'advanced' : 'home');
+  currentUrl = ''; hist = []; hIdx = -1;
+}
+
+function reloadFrame() { if (currentUrl) { if (currentMode === 'worker') loadWorkerUrl(currentUrl); else startAdvProxy(); } }
+function navigateTb(v) { const u = norm(v); if (!u) return; if (currentMode === 'worker') loadWorkerUrl(u); else { document.getElementById('adv-url-input').value = u; startAdvProxy(); } }
+function goBack() { if (hIdx > 0) { hIdx--; navigateTb(hist[hIdx]); } }
+function goForward() { if (hIdx < hist.length-1) { hIdx++; navigateTb(hist[hIdx]); } }
+
+// ── Helpers ────────────────────────────────────────────
+function norm(u) {
+  if (!u) return null; u = u.trim();
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { new URL(u); return u; } catch { return null; }
+}
+function showLoader() { document.getElementById('loader').classList.add('show'); document.getElementById('error-box').classList.remove('show'); }
+function hideLoader() { document.getElementById('loader').classList.remove('show'); }
+function showErr(msg) { hideLoader(); const e = document.getElementById('error-box'); e.classList.add('show'); document.getElementById('error-msg').textContent = msg; }
+function showAdvErr(msg) { const e = document.getElementById('adv-error-box'); e.classList.add('show'); document.getElementById('adv-error-msg').textContent = msg; }
+
+document.getElementById('url-input').addEventListener('keydown', e => { if (e.key === 'Enter') startProxy(); });
+document.getElementById('adv-url-input').addEventListener('keydown', e => { if (e.key === 'Enter') startAdvProxy(); });
+</script>
+</body>
+</html>
